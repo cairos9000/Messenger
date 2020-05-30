@@ -14,5 +14,5 @@ class Message(models.Model):
 
     #загружаем последние 50 сообщений
     def last_50_messages():
-        return Message.objects.order_by('-timestamp').all()[::-1]
+        return Message.objects.order_by('-timestamp').all()
 

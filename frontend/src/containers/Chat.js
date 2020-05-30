@@ -1,49 +1,50 @@
+  
 import React from 'react';
-import Sidepanel from './Sidepanel/Sidepanel';
-
+import { connect } from 'react-redux';
 import WebSocketInstance from '../websocket';
+import Hoc from '../hoc/hoc';
 
 
 class Chat extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {}
-
+        this.state = {message: ''}
+    
         this.waitForSocketConnection(() => {
           WebSocketInstance.addCallbacks(this.setMessages.bind(this), this.addMessage.bind(this))
           WebSocketInstance.fetchMessages(this.props.currentUser);
         });
     }
-
+    
     waitForSocketConnection(callback) {
         const component = this;
         setTimeout(
             function () {
             if (WebSocketInstance.state() === 1) {
-                console.log("Connection is made")
+                console.log("Connection is made");
                 callback();
                 return;
             } else {
-                console.log("wait for connection...")
+                console.log("wait for connection...");
                 component.waitForSocketConnection(callback);
             }
         }, 100);
     }
-
+    
     addMessage(message) {
-        this.setState({ messages: [...this.state.messages, message]});
+        this.setState({ messages: [...this.state.messages, message] });
     }
-
+    
     setMessages(messages) {
         this.setState({ messages: messages.reverse()});
     }
-
+    
     messageChangeHandler = (event) =>  {
         this.setState({
             message: event.target.value
         })
     }
-
+    
     sendMessageHandler = (e) => {
         e.preventDefault();
         const messageObject = {
@@ -56,67 +57,108 @@ class Chat extends React.Component {
         });
     }
 
+    renderTimestamp = timestamp => {
+        let prefix = ''; 
+        const timeDiff = Math.round((new Date().getTime() - new Date(timestamp).getTime())/60000);
+        const sec = new Date().getSeconds() - new Date(timestamp).getSeconds()
+        if (timeDiff < 1) { // less than one minute ago
+            prefix = `${sec} секунд назад`;
+
+        }
+        else if(timeDiff == 1){
+            prefix = `${timeDiff} минуту назад`;
+
+        }
+        else if(timeDiff > 1 && timeDiff <= 9){
+            prefix = `${timeDiff} минуты назад`;
+        }
+        else if (timeDiff < 60 && timeDiff > 9) { // less than sixty minutes ago
+            prefix = `${timeDiff} минут назад`;
+        } else if (timeDiff < 5*60 && timeDiff > 60) { // less than 24 hours ago
+            prefix = `${Math.round(timeDiff/60)} часа назад`;
+        }else if (timeDiff < 24*60 && timeDiff > 5*60) { // less than 24 hours ago
+            prefix = `${Math.round(timeDiff/60)} часа назад`;
+        }
+         else if (timeDiff < 31*24*60 && timeDiff > 24*60) { // less than 7 days ago
+            prefix = `${Math.round(timeDiff/(60*24))} дней назад`;
+        } else {
+            prefix = `${new Date(timestamp)}`;
+        }
+        return prefix
+    }
+    
     renderMessages = (messages) => {
-        const currentUser = "admin";
-        return messages.map((message, i) => (
+        const currentUser = this.props.username;
+        return messages.map((message, i, arr) => (
             <li 
                 key={message.id} 
+                style={{marginBottom: arr.length - 1 === i ? '300px' : '15px'}}
                 className={message.author === currentUser ? 'sent' : 'replies'}>
                 <img src="http://emilcarlsson.se/assets/mikeross.png" />
                 <p>{message.content}
                     <br />
-                    <small className={message.author === currentUser ? 'sent' : 'replies'}>
-                    {Math.round((new Date().getTime() - new Date(message.timestamp).getTime())/60000)} minutes ago
+                    <small>
+                        {this.renderTimestamp(message.timestamp)}
                     </small>
                 </p>
             </li>
         ));
     }
 
+    scrollToBottom = () => {
+        this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+    }
+
+    componentDidMount() {
+        this.scrollToBottom();
+    }
+
+    componentDidUpdate() {
+        this.scrollToBottom();
+    }
+
     render() {
         const messages = this.state.messages;
         return (
-            <div id="frame">
-                <Sidepanel />
-                <div className="content">
-                    <div className="contact-profile">
-                        <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-                        <p>username</p>
-                        <div className="social-media">
-                        <i className="fa fa-facebook" aria-hidden="true"></i>
-                        <i className="fa fa-twitter" aria-hidden="true"></i>
-                        <i className="fa fa-instagram" aria-hidden="true"></i>
-                        </div>
+            <Hoc>
+                <div className="messages">
+                    <ul id="chat-log">
+                    { 
+                        messages && 
+                        this.renderMessages(messages) 
+                    }
+                    <div style={{ float:"left", clear: "both" }}
+                        ref={(el) => { this.messagesEnd = el; }}>
                     </div>
-                    <div className="messages">
-                        <ul id="chat-log">
-                        { 
-                            messages && 
-                            this.renderMessages(messages) 
-                        }
-                        </ul>
-                    </div>
-                    <div className="message-input">
-                        <form onSubmit={this.sendMessageHandler}>
-                            <div className="wrap">
-                                <input 
-                                    onChange={this.messageChangeHandler}
-                                    value={this.state.message}
-                                    required 
-                                    id="chat-message-input" 
-                                    type="text" 
-                                    placeholder="Write your message..." />
-                                <i className="fa fa-paperclip attachment" aria-hidden="true"></i>
-                                <button id="chat-message-submit" className="submit">
-                                    <i className="fa fa-paper-plane" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    </ul>
+                    
                 </div>
-            </div>
+                <div className="message-input">
+                    <form onSubmit={this.sendMessageHandler}>
+                        <div className="wrap">
+                            <input 
+                                onChange={this.messageChangeHandler}
+                                value={this.state.message}
+                                required 
+                                id="chat-message-input" 
+                                type="text" 
+                                placeholder="Write your message..." />
+                            <i className="fa fa-paperclip attachment" aria-hidden="true"></i>
+                            <button id="chat-message-submit" className="submit">
+                                <i className="fa fa-paper-plane" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Hoc>
         );
     };
 }
 
-export default Chat; 
+const mapStateToProps = state => {
+    return {
+        username: state.username
+    }
+}
+  
+export default connect(mapStateToProps)(Chat);

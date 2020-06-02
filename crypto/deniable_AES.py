@@ -76,6 +76,20 @@ def enc(key1, key2, iv, data1, data2):
     print(c)
     return c
 
+def enc_probabilistic(key, iv, data):
+    n = 128
+    u = n // 16
+    k = n - u
+    cipher1 = AES.new(byte_xor(key1, iv), AES.MODE_ECB)
+    d1 = prep_data(u // 8, data1)
+    c = list(d1)
+    i = 0
+    while i < len(d1):
+        r = random.getrandbits(k)
+        c[i] = (cipher1.encrypt(d1[i] + r.to_bytes(k // 8, "big")))
+        i += 1
+    return c
+
 
 def dec(key, iv, data):
     cipher = AES.new(byte_xor(key, iv), AES.MODE_ECB)

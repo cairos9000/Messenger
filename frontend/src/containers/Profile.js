@@ -4,21 +4,19 @@ import { Redirect } from "react-router-dom";
 import Hoc from "../hoc/hoc";
 
 class Profile extends React.Component {
+  returnUser(){
+    return(this.props.username);
+  };    
   render() {
     if (this.props.token === null) {
       return <Redirect to="/" />;
     }
     return (
       <div className="contact-profile">
-        {this.props.username !== null ? (
+        {this.returnUser() !== null ? (
           <Hoc>
-            <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-            <p>{this.props.username}</p>
-            <div className="social-media">
-              <i className="fa fa-facebook" aria-hidden="true" />
-              <i className="fa fa-twitter" aria-hidden="true" />
-              <i className="fa fa-instagram" aria-hidden="true" />
-            </div>
+            <img src="https://windowstips.ru/wp-content/uploads/2016/06/Icon-User.png" alt="" />
+            <p>{this.returnUser()}</p>
           </Hoc>
         ) : null}
       </div>

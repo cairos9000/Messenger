@@ -8,10 +8,7 @@ class Chat extends React.Component {
 
   initialiseChat() {
     this.waitForSocketConnection(() => {
-      // WebSocketInstance.addCallbacks(
-      //   this.props.setMessages.bind(this),
-      //   this.props.addMessage.bind(this)
-      // );
+
       WebSocketInstance.fetchMessages(
         this.props.username,
         this.props.match.params.chatID
@@ -39,14 +36,6 @@ class Chat extends React.Component {
     }, 100);
   }
 
-  // addMessage(message) {
-  //   this.setState({ messages: [...this.state.messages, message] });
-  // }
-
-  // setMessages(messages) {
-  //   this.setState({ messages: messages.reverse() });
-  // }
-
   messageChangeHandler = event => {
     this.setState({ message: event.target.value });
   };
@@ -66,7 +55,7 @@ class Chat extends React.Component {
     let prefix = ''; 
     const timeDiff = Math.round((new Date().getTime() - new Date(timestamp).getTime())/60000);
     const sec = new Date().getSeconds() - new Date(timestamp).getSeconds()
-    if (timeDiff < 1) { // less than one minute ago
+    if (timeDiff < 1) { 
         prefix = `${sec} секунд назад`;
 
     }
@@ -100,7 +89,7 @@ class Chat extends React.Component {
         style={{ marginBottom: arr.length - 1 === i ? "300px" : "15px" }}
         className={message.author === currentUser ? "sent" : "replies"}
       >
-        <img src="http://emilcarlsson.se/assets/mikeross.png" />
+        <img src="https://windowstips.ru/wp-content/uploads/2016/06/Icon-User.png" />
         <p>
           {message.content}
           <br />
@@ -167,7 +156,6 @@ class Chat extends React.Component {
                 type="text"
                 placeholder="Write your message..."
               />
-              <i className="fa fa-paperclip attachment" aria-hidden="true" />
               <button id="chat-message-submit" className="submit">
                 <i className="fa fa-paper-plane" aria-hidden="true" />
               </button>

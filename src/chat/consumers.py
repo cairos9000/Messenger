@@ -2,7 +2,10 @@ from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
-from .models import Message
+
+from .models import Message, Chat, Contact
+from .views import get_last_messages, get_user_contact, get_current_chat
+
 
 User = get_user_model()
 
@@ -16,9 +19,10 @@ class ChatConsumer(WebsocketConsumer):
         return result
 
     def message_to_json(self, message):
+        print(message.contact.user.username)
         return {
             'id': message.id,
-            'author': message.author.username,
+            'author': message.contact.user.username,
             'content': message.content,
             'timestamp': str(message.timestamp)
         }
@@ -27,7 +31,7 @@ class ChatConsumer(WebsocketConsumer):
     # после подключения отображаем ранние сообщения
 
     def fetch_messages(self, data):
-        messages = Message.last_50_messages()
+        messages = get_last_messages(data['chatId'])
         content = {
             'command': 'messages',
             'messages': self.messages_to_json(messages)
@@ -36,11 +40,14 @@ class ChatConsumer(WebsocketConsumer):
 
     # создание нового сообщения
     def new_message(self, data):
-        author = data['from']
-        author_user = User.objects.filter(username=author)[0]
+        user_contact = get_user_contact(data['from'])
+        author_user = User.objects.filter(username=user_contact)[0]
         message = Message.objects.create(
-            author=author_user, 
+            contact=user_contact, 
             content=data['message'])
+        current_chat = get_current_chat(data['chatId'])
+        current_chat.messages.add(message)
+        current_chat.save()
         content = {
             'command': 'new_message',
             'message': self.message_to_json(message)

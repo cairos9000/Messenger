@@ -3,16 +3,27 @@ from django.db import models
 
 User = get_user_model()
 
-# модель для хранения сообщений их дальнейшей загрузки
+class Contact(models.Model):
+    user = models.ForeignKey(User, related_name='friends', on_delete=models.CASCADE)
+    friends = models.ManyToManyField('self', blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+
 class Message(models.Model):
-    author = models.ForeignKey(User, related_name='author_messages', on_delete=models.CASCADE)
+    contact = models.ForeignKey(Contact, related_name='messages', on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.author.username
+        return self.contact.user.username
 
-    #загружаем последние 50 сообщений
-    def last_50_messages():
-        return Message.objects.order_by('-timestamp').all()
 
+class Chat(models.Model):
+    participants = models.ManyToManyField(Contact, related_name='chats')
+    messages = models.ManyToManyField(Message, blank=True)
+
+
+    def __str__(self):
+        return "{}".format(self.pk)

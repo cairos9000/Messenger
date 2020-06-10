@@ -1,4 +1,3 @@
-  
 import React from 'react';
 import { connect } from 'react-redux';
 import WebSocketInstance from '../websocket';
@@ -6,16 +5,25 @@ import Hoc from '../hoc/hoc';
 
 
 class Chat extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {message: ''}
-    
+
+	state = { message: '' }
+
+	initialiseChat() {
         this.waitForSocketConnection(() => {
           WebSocketInstance.addCallbacks(this.setMessages.bind(this), this.addMessage.bind(this))
-          WebSocketInstance.fetchMessages(this.props.currentUser);
+          WebSocketInstance.fetchMessages(
+            this.props.username, 
+            this.props.match.params.chatID
+          );
         });
-    }
-    
+		WebSocketInstance.connect(this.props.match.params.chatID);
+	}
+
+    constructor(props) {
+        super(props);
+		this.initialiseChat();
+	}
+	
     waitForSocketConnection(callback) {
         const component = this;
         setTimeout(
@@ -40,21 +48,19 @@ class Chat extends React.Component {
     }
     
     messageChangeHandler = (event) =>  {
-        this.setState({
-            message: event.target.value
-        })
+        this.setState({ message: event.target.value });
     }
     
     sendMessageHandler = (e) => {
         e.preventDefault();
         const messageObject = {
-            from: "admin",
+            from: this.props.username,
             content: this.state.message,
+            chatId: this.props.match.params.chatID
+
         };
         WebSocketInstance.newChatMessage(messageObject);
-        this.setState({
-            message: ''
-        });
+        this.setState({ message: '' });
     }
 
     renderTimestamp = timestamp => {
@@ -69,17 +75,17 @@ class Chat extends React.Component {
             prefix = `${timeDiff} минуту назад`;
 
         }
-        else if(timeDiff > 1 && timeDiff <= 9){
+        else if(timeDiff > 1 && timeDiff < 5){
             prefix = `${timeDiff} минуты назад`;
         }
-        else if (timeDiff < 60 && timeDiff > 9) { // less than sixty minutes ago
+        else if (timeDiff < 60 && timeDiff >= 5) { 
             prefix = `${timeDiff} минут назад`;
-        } else if (timeDiff < 5*60 && timeDiff > 60) { // less than 24 hours ago
+        } else if (timeDiff < 5*60 && timeDiff > 60) { 
             prefix = `${Math.round(timeDiff/60)} часа назад`;
-        }else if (timeDiff < 24*60 && timeDiff > 5*60) { // less than 24 hours ago
-            prefix = `${Math.round(timeDiff/60)} часа назад`;
+        }else if (timeDiff < 24*60 && timeDiff > 5*60) { 
+            prefix = `${Math.round(timeDiff/60)} часов назад`;
         }
-         else if (timeDiff < 31*24*60 && timeDiff > 24*60) { // less than 7 days ago
+         else if (timeDiff < 31*24*60 && timeDiff > 24*60) { 
             prefix = `${Math.round(timeDiff/(60*24))} дней назад`;
         } else {
             prefix = `${new Date(timestamp)}`;
@@ -93,9 +99,13 @@ class Chat extends React.Component {
             <li 
                 key={message.id} 
                 style={{marginBottom: arr.length - 1 === i ? '300px' : '15px'}}
-                className={message.author === currentUser ? 'sent' : 'replies'}>
+                className={message.author != currentUser ? 'sent' : 'replies'}>
                 <img src="http://emilcarlsson.se/assets/mikeross.png" />
                 <p>{message.content}
+                    <br />
+                    <small>
+                        {message.author}
+                    </small>
                     <br />
                     <small>
                         {this.renderTimestamp(message.timestamp)}
@@ -117,6 +127,19 @@ class Chat extends React.Component {
         this.scrollToBottom();
     }
 
+    componentWillReceiveProps(newProps) {
+        if (this.props.match.params.chatID !== newProps.match.params.chatID) {
+            WebSocketInstance.disconnect();
+            this.waitForSocketConnection(() => {
+                WebSocketInstance.fetchMessages(
+                  this.props.username, 
+                  newProps.match.params.chatID
+                );
+              });
+              WebSocketInstance.connect(newProps.match.params.chatID);
+        }
+    }
+
     render() {
         const messages = this.state.messages;
         return (
@@ -131,7 +154,6 @@ class Chat extends React.Component {
                         ref={(el) => { this.messagesEnd = el; }}>
                     </div>
                     </ul>
-                    
                 </div>
                 <div className="message-input">
                     <form onSubmit={this.sendMessageHandler}>

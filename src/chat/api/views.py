@@ -38,7 +38,6 @@ class ChatCreateView(CreateAPIView):
     serializer_class = ChatSerializer
     permission_classes = (permissions.IsAuthenticated, )
 
-
 class ChatUpdateView(UpdateAPIView):
     queryset = Chat.objects.all()
     serializer_class = ChatSerializer

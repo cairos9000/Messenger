@@ -35,6 +35,14 @@ class HorizontalAddChatForm extends React.Component {
       if (!err) {
         const combined = [...usernames, this.props.username];
         console.log(combined);
+        let form = document.forms.form;
+
+        let name = form.elements.chatName.value; 
+        console.log(name);
+        if(name === null || name === undefined)
+        {
+            name = "room";
+        }
         axios.defaults.headers = {
           "Content-Type": "application/json",
           Authorization: `Token ${this.props.token}`
@@ -42,7 +50,8 @@ class HorizontalAddChatForm extends React.Component {
         axios
           .post("http://127.0.0.1:8000/chat/create/", {
             messages: [],
-            participants: combined
+            participants: combined,
+            chatName: name
           })
           .then(res => {
             this.props.history.push(`/${res.data.id}`);
@@ -70,7 +79,7 @@ class HorizontalAddChatForm extends React.Component {
     const userNameError =
       isFieldTouched("userName") && getFieldError("userName");
     return (
-      <Form layout="inline" onSubmit={this.handleSubmit}>
+      <Form layout="inline" onSubmit={this.handleSubmit} name="form">
         {this.state.error ? `${this.state.error}` : null}
         <FormItem
           validateStatus={userNameError ? "error" : ""}
@@ -96,6 +105,10 @@ class HorizontalAddChatForm extends React.Component {
           )}
         </FormItem>
         <FormItem>
+            <label>Chat name:</label>
+            <input type="text" name="chatName"></input>
+        </FormItem>
+        <FormItem>
           <Button
             type="primary"
             htmlType="submit"
@@ -104,6 +117,7 @@ class HorizontalAddChatForm extends React.Component {
             Start a chat
           </Button>
         </FormItem>
+        
       </Form>
     );
   }

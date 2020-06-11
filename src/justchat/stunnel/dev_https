@@ -1,0 +1,17 @@
+pid=
+
+cert = /home/nkrotov15/Messenger-new/src/justchat/stunnel/stunnel.cert
+key = /home/nkrotov15/Messenger-new/src/justchat/stunnel/stunnel.key
+sslVersion = TLSv1.2
+foreground = yes
+output = stunnel.log
+
+[https]
+accept = 8443
+connect = 8001
+
+[websocket]
+accept = 8000
+connect = 8001
+
+TIMEOUTclose=1
